@@ -61,10 +61,21 @@
             const data = await response.json();
             if(response.ok){
                 dispatch('addCar', data);
+                resetForm();
             }
         } catch(err){
             console.error(err);
         }
+    };
+
+
+    const resetForm = () => {
+        brand = '';
+        model = '';
+        year = '';
+        price = '';
+        url = '';
+        errorMessage = '';
     };
 </script>
 

@@ -1,49 +1,50 @@
 <script>
-    import { onMount } from 'svelte';
     export let currentParams;
     let car = {};
     let bids = [];
-    let { id } = currentParams; 
     let loading = true;
     let error = null;
     let bidsLoading = true;
     let bidsError = null;
 
-    onMount(() => {
-        fetch(`http://localhost:3000/cars/${id}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                car = data;
-                loading = false;
-            })
-            .catch(err => {
-                console.error("Error fetching car details:", err);
-                error = "Failed to load car details.";
-                loading = false;
-            });
+    let id;
+    if (currentParams) {
+        ({ id } = currentParams);
+    }
 
-            fetch(`http://localhost:3000/cars/${id}/bids`)
-            .then(response => {
-                if(!response.ok){
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                bids = data.bids;
-                bidsLoading = false;
-            })
-            .catch(err => {
-                console.error("Error fetching bids", err);
-                bidsError = "Failed to load";
-                bidsLoading = false;
-            })
-    });
+    const fetchBids = async () => {
+        try {
+            const bidsResponse = await fetch(`http://localhost:3000/cars/${id}/bids`);
+            if (!bidsResponse.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const bidsData = await bidsResponse.json();
+            bids = bidsData.bids;
+            bidsLoading = false;
+        } catch (err) {
+            console.error("Error fetching bids", err);
+            bidsError = "Failed to load";
+            bidsLoading = false;
+        }
+    };
+
+    const fetchCarDetails = async () => {
+        try {
+            const carResponse = await fetch(`http://localhost:3000/cars/${id}`);
+            if (!carResponse.ok) {
+                throw new Error('Network response was not ok');
+            }
+            car = await carResponse.json();
+            loading = false;
+        } catch (err) {
+            console.error("Error fetching car details:", err);
+            error = "Failed to load car details.";
+            loading = false;
+        }
+    };
+
+    fetchBids();
+    fetchCarDetails();
 
 </script>
 <div class="bg-[#2D2F33] min-h-screen p-8">

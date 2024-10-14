@@ -3,10 +3,11 @@
     import AddCar from "./AddCar.svelte";
     import Filter from "./Filter.svelte";
     import CarDetails from "./CarDetails.svelte";
-    import { onMount } from 'svelte';
     import Page from 'page';
   
-    let API_URL = "http://localhost:3000/cars";
+    const API_URL = "http://localhost:3000/cars";
+
+    export let currentParams;
   
     export let addMoreCars = false;
     export let cars = [];
@@ -68,17 +69,12 @@
     }
 
     const showCarDetails = (car) => {
-    console.log(car.id);
     Page(`/cars/${car.id}`);
 };
-
-    const closeCarDetails = () => {
-        selectedCar = null;
-    }
   
-    onMount(() => {
-      refreshList();
-    });
+$: if (cars.length === 0 && !loading) {
+    refreshList();
+}
   
     const deleteCar = (id) => {
       fetch(`${API_URL}/${id}`, {
