@@ -1,7 +1,8 @@
 <script>
     import { createEventDispatcher } from 'svelte';
     import Page from 'page';
-    import { userStore, tokenStore } from './stores.js';
+    import { userStore} from '../stores/userStores.js';
+    import { tokenStore } from '../stores/authStore.js';
 
     let username = '';
     let email = '';
@@ -11,6 +12,7 @@
     let dispatch = createEventDispatcher();
     let login = true;
     let register = false;
+
 
 
     const handleSubmit = async (event) => {
@@ -29,12 +31,21 @@
             
 
             const data = await response.json();
+            
             if (!response.ok) {
                 throw new Error(data.msg);
             }
+            
+            userStore.set({
+            id: data.user.id,
+            username: data.user.username,
+            email: data.user.email,
+            isAdmin: data.user.isAdmin,
+        });
 
-            userStore.set(data.user);
-            tokenStore.set(data.token);
+
+        tokenStore.set(data.token);
+
 
 
             dispatch('login', { user: data.user });
@@ -147,7 +158,7 @@
                     <input 
                         type="password" 
                         placeholder="Repeat password" 
-                        bind:value={password}
+                        bind:value={repeatPassword}
                         class="block w-full p-2 border border-gray-700 bg-gray-900 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
                     />
                     

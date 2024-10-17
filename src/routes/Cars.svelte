@@ -3,7 +3,10 @@
     import AddCar from "./AddCar.svelte";
     import Filter from "./Filter.svelte";
     import CarDetails from "./CarDetails.svelte";
+    import { onDestroy, onMount } from "svelte";
+    import { userStore } from '../stores/userStores.js';
     import Page from 'page';
+
   
     const API_URL = "http://localhost:3000/cars";
 
@@ -12,6 +15,8 @@
     export let addMoreCars = false;
     export let cars = [];
     let allCars = [];
+
+    let user = { id: null, username: '', email: '', isAdmin: false };
 
     let selectedCar = null;
 
@@ -116,10 +121,21 @@ $: if (cars.length === 0 && !loading) {
         cars = allCars;
     }
 
+    const unsubscribe = userStore.subscribe(value => {
+      user = { ...value, isAdmin: value.isAdmin !== undefined ? value.isAdmin : false };
+    });
+
+    onDestroy(() => {
+    unsubscribe();
+});
+
+
   </script>
   
   <TailwindCss />
 
+
+  {#if user.isAdmin}
   <div class = "bg-[#2D2F33] min-h-screen p-8">
 
     <div class="mb-6 text-right">
@@ -130,6 +146,7 @@ $: if (cars.length === 0 && !loading) {
       </button>
     </div>
   
+
   {#if addMoreCars}
     <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
       <div class="p-6 rounded-lg max-w-lg w-full relative text-[#E0E0E0]">
@@ -203,3 +220,69 @@ $: if (cars.length === 0 && !loading) {
     </div>
   </div>
 </div>
+
+{:else}
+
+<div class = "bg-[#2D2F33] min-h-screen p-8">
+
+<div class="flex">
+  
+  <div class="w-1/4 p-4">
+      <Filter
+        {brands}
+        {models}
+        selectedBrand={selectedBrand}
+        selectedModel={selectedModel}
+        minYearOptions={minYearOptions}
+        maxYearOptions={maxYearOptions}
+        on:filter={handleFilterChange}
+        on:clearFilters={handleClearFilters}
+      />
+    </div>
+
+
+  <div class="w-3/4 p-6">
+    <div class="max-w-lg mx-auto p-4">
+      <input
+        type="text"
+        placeholder="Search cars by brand or model..."
+        on:input={handleSearchInput}
+        class="bg-gray-200 text-black px-4 py-2 rounded-lg w-full"
+      />
+    </div>
+
+    <div class="flex flex-wrap justify-center gap-6 p-6">
+      {#if loading}
+          <p class="text-white">Loading cars...</p>
+      {:else if paginatedCars.length > 0}
+          {#each paginatedCars as listedCars}
+              <div class="bg-[#2C2C2E] text-[#E0E0E0] rounded-lg shadow-md p-4 w-64 text-center">
+                <button on:click={() => showCarDetails(listedCars)}>
+                  <img class="h-40 w-full object-cover rounded-t-lg" src={listedCars.url} alt="{listedCars.brand} {listedCars.model}" />
+                  <h4 class="text-xl font-bold mb-2">{listedCars.brand} {listedCars.model}</h4>
+                  <p class="text-gray-600">Year: {listedCars.year}, Price: {listedCars.price} kebabs</p>
+              </button>
+              </div>
+          {/each}
+      {:else if searchQuery.length > 0}
+          <p class="text-gray-500">No results for "{searchQuery}"</p>
+      {:else}
+          <p class="text-gray-500">The auction is empty.</p>
+      {/if}
+  </div>
+
+    {#if filteredCars.length > pageSize}
+      <div class="mt-4 flex justify-center space-x-4">
+        <button on:click={() => page = Math.max(1, page - 1)} class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50" disabled={page === 1}>
+          Previous
+        </button>
+        <button on:click={() => page += 1} class="bg-blue-500 text-white px-4 py-2 rounded disabled:opacity-50" disabled={page * pageSize >= filteredCars.length}>
+          Next
+        </button>
+      </div>
+    {/if}
+  </div>
+</div>
+</div>
+
+{/if}
