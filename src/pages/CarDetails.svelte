@@ -12,6 +12,9 @@
     let winningBidAmount = 0;
     let newBidAmount = 0;
     let bidderName = ''; 
+    let time;
+    let isAuctionActive = false;
+    let timeRemaining = '';
 
     let id;
     if (currentParams) {
@@ -60,6 +63,10 @@
     };
 
     const postNewBid = async () => {
+        if (!isAuctionActive) {
+            alert('Auction has ended. You cannot place a new bid.');
+            return;
+        }
         if (newBidAmount <= winningBidAmount) {
             alert("Bid must be higher than the current winning bid.");
             return;
@@ -103,11 +110,33 @@
                 throw new Error('Network response was not ok');
             }
             car = await carResponse.json();
+            if (car.time) {
+                updateTimeRemaining();
+                setInterval(updateTimeRemaining, 1000);
+            }
             loading = false;
         } catch (err) {
             console.error("Error fetching car details:", err);
             error = "Failed to load car details.";
             loading = false;
+        }
+    };
+
+    const updateTimeRemaining = () => {
+        const now = new Date().getTime();
+        const auctiontime = new Date(car.time).getTime();
+
+        const diff = auctiontime - now; 
+
+        if (diff > 0) {
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            timeRemaining = `${hours}h ${minutes}m ${seconds}s`;
+            isAuctionActive = true;
+        } else {
+            time = 'Auction ended';
+            isAuctionActive = false;
         }
     };
 
@@ -147,6 +176,7 @@
                     <div class="border-t-2 border-gray-600 pt-4">
                         <p class="text-white">Year: {car.year}</p>
                         <p class="text-white">Price: {car.price} kebabs</p>
+                        <p>Ends in: {time}</p>
                     </div>
                 </div>
 
@@ -161,13 +191,16 @@
                             placeholder="Enter your bid amount" 
                             class="p-2 rounded"
                         />
-                        <button 
-                            on:click={postNewBid} 
-                            class="bg-blue-500 text-white p-2 rounded ml-2"
+                        <button on:click={postNewBid} class="bg-blue-500 text-white p-2 rounded ml-2"
                         >
                             Place Bid
                         </button>
                     </div>
+
+                    {/if}
+
+                    {#if !isAuctionActive} 
+                    <p class="text-red">The auction has ended. No further bids can be placed.</p>
 
                     {/if}
 

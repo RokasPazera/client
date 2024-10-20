@@ -1,13 +1,13 @@
 <script>
-  import Footer from './routes/Footer.svelte';
-  import Header from './routes/Header.svelte';
-  import Filter from './routes/Filter.svelte';
+  import Footer from './components/Footer.svelte';
+  import Header from './components/Header.svelte';
+  import Filter from './components/Filter.svelte';
   import TailwindCss from './lib/TailwindCSS.svelte';
-  import Cars from './routes/Cars.svelte'
-  import CarDetails from "./routes/CarDetails.svelte";
-  import Login from './routes/Login.svelte';
-  import Register from './routes/Register.svelte';
-  import User from './routes/User.svelte';
+  import Cars from './pages/Cars.svelte'
+  import CarDetails from "./pages/CarDetails.svelte";
+  import Login from './pages/Login.svelte';
+  import Register from './pages/Register.svelte';
+  import User from './pages/User.svelte';
 
   import { onMount } from 'svelte';
  
@@ -47,7 +47,7 @@
     currentParams = ctx.params;
   });
 
-  Page('/auth/profile/:id', (ctx) => { 
+  Page('/users/me/:id', (ctx) => { 
     currentRoute = User;
     currentParams = ctx.params;
   });

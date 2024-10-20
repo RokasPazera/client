@@ -1,9 +1,9 @@
 <script>
     import TailwindCss from "../lib/TailwindCSS.svelte";
-    import AddCar from "./AddCar.svelte";
-    import Filter from "./Filter.svelte";
-    import CarDetails from "./CarDetails.svelte";
-    import { onDestroy, onMount } from "svelte";
+    import AddCar from "../components/AddCar.svelte";
+    import Filter from "../components/Filter.svelte";
+    import EditCar from "../components/EditCar.svelte";
+    import { onDestroy} from "svelte";
     import { userStore } from '../stores/userStores.js';
     import Page from 'page';
 
@@ -15,6 +15,8 @@
     export let addMoreCars = false;
     export let cars = [];
     let allCars = [];
+    let editCarMode = false;
+    let carToEdit = null;
 
     let user = { id: null, username: '', email: '', isAdmin: false };
 
@@ -38,8 +40,15 @@
     let selectedYear = '';
     let searchQuery = '';
 
-  
     let newCar = {};
+    let currentTime = {};
+
+    
+
+  
+    let endTime;
+    
+    
   
     $: filteredCars = cars.filter(car => {
       const searchLower = searchQuery.toLowerCase();
@@ -63,14 +72,18 @@
       fetch(API_URL)
         .then((response) => response.json())
         .then((data) => {
-          cars = data;
-          allCars = data;
-          brands = [...new Set(cars.map(car => car.brand))];
-          models = [...new Set(cars.map(car => car.model))];
-          years = [...new Set(cars.map(car => car.year))];
+          cars = data.map(car => ({
+                ...car
+            }));
+            allCars = cars;
+            brands = [...new Set(cars.map(car => car.brand))];
+            models = [...new Set(cars.map(car => car.model))];
+            years = [...new Set(cars.map(car => car.year))];
         })
         .catch((err) => console.error("Error fetching cars: ", err))
-        .finally(() => (loading = false));
+        .finally(() => {
+          startTimer();
+          loading = false});
     }
 
     const showCarDetails = (car) => {
@@ -104,6 +117,33 @@ $: if (cars.length === 0 && !loading) {
       );
     });
   };
+
+  async function updateCar(updatedCar) {
+    console.log(updatedCar);
+
+    fetch(`${API_URL}/${updatedCar.id}`, {
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedCar),
+    })
+      .then((response) => response.json())
+      .then(() => {
+        const index = cars.findIndex(car => car.id === updatedCar.id);
+        if (index !== -1) {
+            cars[index] = { ...updatedCar };
+            cars = [...cars];
+        }
+        editCarMode = false;
+      })
+      .catch((err) => console.error("Error updating car:", err));
+  };
+
+  const openEditCar = (car) => {
+    carToEdit = car;
+    editCarMode = true;
+  };
   
     const handleCarAdded = () => {
       refreshList();
@@ -125,9 +165,41 @@ $: if (cars.length === 0 && !loading) {
       user = { ...value, isAdmin: value.isAdmin !== undefined ? value.isAdmin : false };
     });
 
+    
+    function startTimer() {
+        setInterval(() => {
+            cars = cars.map(car => ({
+                ...car,
+                remainingTime: getRemainingTime(car.time)
+            }));
+        }, 1000);
+    }
+
+    function getRemainingTime(endTime) {
+    const now = new Date();
+    const end = new Date(endTime);
+
+    const nowTime = now.getTime(); 
+    const endTimeStamp = end.getTime();
+    
+    const diff = endTimeStamp - nowTime;
+
+    if (diff <= 0) {
+        return 'Auction ended';
+    }
+
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return `${hours}h ${minutes}m ${seconds}s`;
+}
+
+
+
     onDestroy(() => {
     unsubscribe();
-});
+  });
 
 
   </script>
@@ -147,10 +219,23 @@ $: if (cars.length === 0 && !loading) {
     </div>
   
 
+    {#if editCarMode}
+    <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
+      <div class="p-6 rounded-lg max-w-lg w-full relative text-[#E0E0E0]">
+    
+    <button class= "absolute top-2 right-2 text-red-500 bg-[#2C2C2E] border border-red-500 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors" on:click={() => (editCarMode = false)}>
+      ✕
+    </button>
+    <EditCar selectedCar={carToEdit} {updateCar} />
+    </div>
+  </div>
+{/if}
+
   {#if addMoreCars}
     <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
       <div class="p-6 rounded-lg max-w-lg w-full relative text-[#E0E0E0]">
-        <button class="absolute top-2 right-2 text-red-500 bg-[#2C2C2E] border border-red-500 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors" on:click={() => (addMoreCars = false)}>
+        <button class="absolute top-2 right-2 text-red-500 bg-[#2C2C2E] border border-red-500 p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors"
+         on:click={() => (addMoreCars = false)}>
           ✕
         </button>
         <AddCar on:addCar={handleCarAdded}/>
@@ -194,9 +279,13 @@ $: if (cars.length === 0 && !loading) {
                     <img class="h-40 w-full object-cover rounded-t-lg" src={listedCars.url} alt="{listedCars.brand} {listedCars.model}" />
                     <h4 class="text-xl font-bold mb-2">{listedCars.brand} {listedCars.model}</h4>
                     <p class="text-gray-600">Year: {listedCars.year}, Price: {listedCars.price} kebabs</p>
-                </button>
+                    <span>Ends in: {getRemainingTime(listedCars.time)}</span>                 
+                  </button>
                     <button class="mt-4 px-4 py-2 bg-[#1abc9c] text-white rounded hover:bg-[#16a085] transition duration-300" on:click={() => deleteCar(listedCars.id)}>
                         Delete
+                    </button>
+                    <button class="mt-2 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition duration-300" on:click={() => openEditCar(listedCars)}>
+                      Edit
                     </button>
                 </div>
             {/each}
@@ -261,7 +350,8 @@ $: if (cars.length === 0 && !loading) {
                   <img class="h-40 w-full object-cover rounded-t-lg" src={listedCars.url} alt="{listedCars.brand} {listedCars.model}" />
                   <h4 class="text-xl font-bold mb-2">{listedCars.brand} {listedCars.model}</h4>
                   <p class="text-gray-600">Year: {listedCars.year}, Price: {listedCars.price} kebabs</p>
-              </button>
+                  <span>Ends in: {getRemainingTime(listedCars.time)}</span>  
+                </button>
               </div>
           {/each}
       {:else if searchQuery.length > 0}

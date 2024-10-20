@@ -19,6 +19,7 @@
     "vite": "^4.4.9"
   },
   "dependencies": {
+    "client": "file:",
     "page": "^1.11.6",
     "svelte-routing": "^2.13.0"
   }

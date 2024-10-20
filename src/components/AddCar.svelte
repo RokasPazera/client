@@ -8,6 +8,7 @@
     let year;
     let price;
     let url;
+    let time;
 
     let newCar={};
 
@@ -17,7 +18,7 @@
 
         errorMessage = '';
 
-        if (!brand || !model || !year || !price || !url) {
+        if (!brand || !model || !year || !price || !url || !time) {
             errorMessage = 'All fields are required!';
             return;
         }
@@ -47,6 +48,7 @@
             year,
             price,
             url,
+            time,
         };
 
         try{
@@ -75,6 +77,7 @@
         year = '';
         price = '';
         url = '';
+        time = '';
         errorMessage = '';
     };
 </script>
@@ -114,12 +117,27 @@
         placeholder="URL" 
         bind:value={url} 
     />
+    <input 
+        class="block w-full p-3 border border-gray-700 bg-gray-900 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500" 
+        type="datetime-local" 
+        placeholder="Auction End Date & Time" 
+        bind:value={time}
+    />
     <button 
         class="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 transition duration-300">
         Post!
     </button>
 </form>
 
-<style>
 
+<style>
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 </style>
